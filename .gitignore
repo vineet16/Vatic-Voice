@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.vatic/
+flows/
+benchmarks/results/*
+!benchmarks/results/benchmark.png
+!benchmarks/results/results.json
+!benchmarks/results/results.md
+.env
+.hypothesis/

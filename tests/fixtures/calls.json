@@ -1,0 +1,46 @@
+[
+  {
+    "name": "book",
+    "seed": 101,
+    "turns": [
+      "Hi! I'd like to book an appointment. My name is Lucy Adams.",
+      "Friday the 23rd please.",
+      "9 am.",
+      "Yes.",
+      "No, that's all. Thanks, bye!"
+    ]
+  },
+  {
+    "name": "book_with_correction",
+    "seed": 102,
+    "turns": [
+      "Hi, this is Michael Smith. I'd like to book an appointment.",
+      "Monday the 26th.",
+      "Actually, can we do Tuesday the 27th instead?",
+      "9 am.",
+      "Yes, please.",
+      "That's it, thank you!"
+    ]
+  },
+  {
+    "name": "cancel",
+    "seed": 107,
+    "turns": [
+      "Hi, I need to cancel my appointment. This is Peter Brown.",
+      "Yes.",
+      "No, that's all. Bye."
+    ]
+  },
+  {
+    "name": "book_first_choice_full",
+    "seed": 103,
+    "turns": [
+      "Hi! I'd like to book an appointment. My name is Nina Thomas.",
+      "Saturday please.",
+      "Tuesday the 27th.",
+      "10 am.",
+      "Yes.",
+      "No, that's all."
+    ]
+  }
+]

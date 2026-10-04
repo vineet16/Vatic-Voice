@@ -1,0 +1,86 @@
+# Caller simulator personas: goals, styles and phrase banks.
+# Placeholders: {name} {date} {time} {date2} {question}
+goals:
+  book: 55
+  cancel: 20
+  reschedule: 15
+  hours: 10
+
+styles:
+  terse: 35
+  chatty: 35
+  confused: 15
+  interrupts: 15
+
+# Share of booking callers whose first-choice day has no openings (a weekend day).
+unavailable_first_choice: 25
+
+# How a booking caller opens: name only / name + date / no name.
+book_openers:
+  name: 70
+  name_date: 15
+  none: 15
+
+phrases:
+  open:
+    book:
+      terse: ["Book an appointment. {name}.", "I need an appointment. This is {name}."]
+      chatty:
+        - "Hi! I'd like to book an appointment. My name is {name}."
+        - "Hello, this is {name}. I was hoping to schedule an appointment."
+        - "Hi there, I need to make an appointment, my name is {name}."
+      confused: ["Um, hi. I think I need to see a doctor? My name is {name}."]
+    book_date:
+      terse: ["Book an appointment for {date}. {name}."]
+      chatty: ["Hi, this is {name}. I'd like to book an appointment for {date} if possible."]
+      confused: ["Hi, um, my name is {name}, could I make an appointment for {date}?"]
+    book_noname:
+      terse: ["I need an appointment."]
+      chatty: ["Hi! I'd like to make an appointment, please."]
+      confused: ["Hello? I need to see a doctor I think."]
+    cancel:
+      terse: ["Cancel my appointment. {name}."]
+      chatty: ["Hi, I need to cancel my appointment. This is {name}."]
+      confused: ["Hi, um, I can't make my appointment, I need to cancel it. I'm {name}."]
+    reschedule:
+      terse: ["Reschedule my appointment. {name}."]
+      chatty: ["Hello, this is {name}. I need to reschedule my appointment."]
+      confused: ["Hi, my name is {name}, I need to move my appointment I think, can I reschedule?"]
+    hours:
+      terse: ["What are your hours?"]
+      chatty: ["Hi! I was just wondering what your opening hours are?"]
+      confused: ["Hello, um, when are you open?"]
+  name:
+    terse: ["{name}.", "{name}."]
+    chatty: ["Sure, it's {name}.", "My name is {name}."]
+    confused: ["Oh, sorry, it's {name}."]
+  date:
+    terse: ["{date}.", "{date} please."]
+    chatty: ["{date} would be great.", "Um, {date} would be great.", "Let's say {date}."]
+    confused: ["Maybe {date}?", "I guess {date}."]
+  time:
+    terse: ["{time}.", "{time} please."]
+    chatty: ["Let's do {time}.", "{time} works for me.", "Oh, {time} would be perfect."]
+    confused: ["Um, {time} I guess."]
+  affirm:
+    terse: ["Yes.", "Yep."]
+    chatty: ["Yes, please.", "Yeah, that's right.", "Sounds good."]
+    confused: ["Yes, I think so.", "Yes."]
+  bye:
+    terse: ["No, that's all. Bye."]
+    chatty: ["No, that's all. Thanks so much, bye!", "That's it, thank you!"]
+    confused: ["No, that's all. Thanks."]
+  unsure_date: ["Hmm, I'm not sure. What do you have available?"]
+  wrong_details: ["No, that's not right. I wanted {date} at {time}."]
+  repeat: ["Sorry, could you repeat that?"]
+  side_questions:
+    - "Before that, what are your hours?"
+    - "Quick question, do you take insurance?"
+    - "Sorry, what's your address again?"
+  multi_intent:
+    - "{slot}, and also what are your hours?"
+    - "{slot} please. Also, do I need to bring anything?"
+    - "{slot}, but where do I park?"
+  corrections:
+    - "No wait, actually make that {date2}."
+    - "Actually, can we do {date2} instead?"

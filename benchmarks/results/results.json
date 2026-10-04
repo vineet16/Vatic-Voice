@@ -1,0 +1,304 @@
+{
+  "config": {
+    "sessions": 500,
+    "shadow_sessions": 1000,
+    "llm_latency_ms": 400.0,
+    "alpha": 0.01,
+    "seed": 2026,
+    "classifier": true
+  },
+  "phases": [
+    {
+      "phase": "baseline",
+      "sessions": 500,
+      "turn_latency_p50_ms": 889.0,
+      "turn_latency_p95_ms": 1154.6,
+      "compiled_turn_latency_p50_ms": null,
+      "llm_calls_per_session": 7.36,
+      "compiled_share": 0.0,
+      "wrong_route_rate": 0.0,
+      "task_success": 0.998,
+      "membership_p95_ms": 0.0,
+      "loop_lag_p99_ms": 3.48
+    },
+    {
+      "phase": "vatic",
+      "sessions": 500,
+      "turn_latency_p50_ms": 434.0,
+      "turn_latency_p95_ms": 956.5,
+      "compiled_turn_latency_p50_ms": 1.29,
+      "llm_calls_per_session": 2.9,
+      "compiled_share": 0.4545,
+      "wrong_route_rate": 0.0,
+      "task_success": 0.998,
+      "membership_p95_ms": 3.147,
+      "loop_lag_p99_ms": 2.53
+    }
+  ],
+  "flows_compiled": [
+    "book_appointment",
+    "cancel_appointment",
+    "book_appointment_2",
+    "book_appointment_3",
+    "reschedule_appointment",
+    "book_appointment_4",
+    "cancel_appointment_2"
+  ],
+  "promotions": [
+    {
+      "flow": "book_appointment",
+      "to": "active",
+      "reason": "shadow evidence: 250 sessions, match 99.9%"
+    },
+    {
+      "flow": "book_appointment_3",
+      "to": "active",
+      "reason": "shadow evidence: 84 sessions, match 100.0%"
+    },
+    {
+      "flow": "cancel_appointment",
+      "to": "active",
+      "reason": "shadow evidence: 160 sessions, match 100.0%"
+    },
+    {
+      "flow": "reschedule_appointment",
+      "to": "active",
+      "reason": "shadow evidence: 90 sessions, match 100.0%"
+    }
+  ],
+  "shadow": {
+    "book_appointment": {
+      "sessions": 250,
+      "touched_sessions": 371,
+      "compared_turns": 1164,
+      "matched_turns": 1163,
+      "match_rate": 0.9991,
+      "irreversible_mismatches": 0,
+      "wrong_route": {
+        "s2": [
+          0,
+          288
+        ],
+        "s4": [
+          0,
+          255
+        ],
+        "s5": [
+          0,
+          250
+        ]
+      }
+    },
+    "book_appointment_2": {
+      "sessions": 44,
+      "touched_sessions": 93,
+      "compared_turns": 306,
+      "matched_turns": 306,
+      "match_rate": 1.0,
+      "irreversible_mismatches": 0,
+      "wrong_route": {
+        "s2": [
+          0,
+          74
+        ],
+        "s4": [
+          0,
+          51
+        ],
+        "s6": [
+          0,
+          44
+        ],
+        "s7": [
+          0,
+          44
+        ]
+      }
+    },
+    "book_appointment_3": {
+      "sessions": 84,
+      "touched_sessions": 94,
+      "compared_turns": 262,
+      "matched_turns": 262,
+      "match_rate": 1.0,
+      "irreversible_mismatches": 0,
+      "wrong_route": {
+        "s3": [
+          0,
+          85
+        ],
+        "s4": [
+          0,
+          84
+        ]
+      }
+    },
+    "book_appointment_4": {
+      "sessions": 1,
+      "touched_sessions": 371,
+      "compared_turns": 375,
+      "matched_turns": 374,
+      "match_rate": 0.9973,
+      "irreversible_mismatches": 0,
+      "wrong_route": {
+        "s2": [
+          0,
+          1
+        ],
+        "s3": [
+          0,
+          1
+        ],
+        "s5": [
+          0,
+          1
+        ],
+        "s6": [
+          0,
+          1
+        ]
+      }
+    },
+    "cancel_appointment": {
+      "sessions": 160,
+      "touched_sessions": 181,
+      "compared_turns": 341,
+      "matched_turns": 341,
+      "match_rate": 1.0,
+      "irreversible_mismatches": 0,
+      "wrong_route": {
+        "s2": [
+          0,
+          160
+        ]
+      }
+    },
+    "cancel_appointment_2": {
+      "sessions": 0,
+      "touched_sessions": 181,
+      "compared_turns": 317,
+      "matched_turns": 181,
+      "match_rate": 0.571,
+      "irreversible_mismatches": 136,
+      "wrong_route": {
+        "s2": [
+          136,
+          136
+        ]
+      }
+    },
+    "reschedule_appointment": {
+      "sessions": 90,
+      "touched_sessions": 145,
+      "compared_turns": 432,
+      "matched_turns": 432,
+      "match_rate": 1.0,
+      "irreversible_mismatches": 0,
+      "wrong_route": {
+        "s2": [
+          0,
+          104
+        ],
+        "s4": [
+          0,
+          93
+        ],
+        "s5": [
+          0,
+          90
+        ]
+      }
+    }
+  },
+  "classifiers": {
+    "book_appointment": {
+      "steps": [
+        "s2",
+        "s4"
+      ],
+      "holdout_accuracy": 0.8108
+    },
+    "book_appointment_2": {
+      "steps": [],
+      "holdout_accuracy": null
+    },
+    "book_appointment_3": {
+      "steps": [],
+      "holdout_accuracy": null
+    },
+    "book_appointment_4": {
+      "steps": [],
+      "holdout_accuracy": null
+    },
+    "cancel_appointment": {
+      "steps": [],
+      "holdout_accuracy": null
+    },
+    "cancel_appointment_2": {
+      "steps": [],
+      "holdout_accuracy": null
+    },
+    "reschedule_appointment": {
+      "steps": [],
+      "holdout_accuracy": null
+    }
+  },
+  "calibration": {
+    "book_appointment": {
+      "s2": {
+        "feasible": true,
+        "n_cal": 200,
+        "n_holdout": 88,
+        "accept_threshold": 0.355013,
+        "reject_threshold": 0.355013,
+        "cal_risk": 0.0,
+        "holdout_wrong_route": 0.0,
+        "holdout_accept_rate": 1.0,
+        "note": ""
+      },
+      "s4": {
+        "feasible": true,
+        "n_cal": 172,
+        "n_holdout": 83,
+        "accept_threshold": 0.126741,
+        "reject_threshold": 0.126741,
+        "cal_risk": 0.0,
+        "holdout_wrong_route": 0.0,
+        "holdout_accept_rate": 1.0,
+        "note": ""
+      }
+    },
+    "book_appointment_2": {},
+    "book_appointment_3": {},
+    "book_appointment_4": {},
+    "cancel_appointment": {},
+    "cancel_appointment_2": {},
+    "reschedule_appointment": {}
+  },
+  "learning_curve": [
+    {
+      "sessions_observed": 25,
+      "compiled_share": 0.0
+    },
+    {
+      "sessions_observed": 50,
+      "compiled_share": 0.0
+    },
+    {
+      "sessions_observed": 100,
+      "compiled_share": 0.2953
+    },
+    {
+      "sessions_observed": 200,
+      "compiled_share": 0.3338
+    },
+    {
+      "sessions_observed": 300,
+      "compiled_share": 0.457
+    },
+    {
+      "sessions_observed": 500,
+      "compiled_share": 0.457
+    }
+  ]
+}
