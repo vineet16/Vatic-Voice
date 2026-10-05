@@ -36,8 +36,17 @@ adapters below and the reference clinic agent in `examples/`.
 
 ## Install
 
-Requires Python 3.11 or newer. Clone the repository: the examples, simulator and benchmark
-live in it (the `vatic` package on PyPI is an unrelated project).
+Requires Python 3.11 or newer. The `vatic` package on PyPI is an unrelated project, so install
+from GitHub.
+
+**Library only** (to use Vatic from your own LiveKit, Pipecat or custom pipeline):
+
+```bash
+pip install "git+https://github.com/vineet16/Vatic-Voice.git"
+pip install "vatic[livekit] @ git+https://github.com/vineet16/Vatic-Voice.git"  # with an extra
+```
+
+**From a clone** (adds the examples, simulator and benchmark, and lets you run the tests):
 
 ```bash
 git clone https://github.com/vineet16/Vatic-Voice.git && cd Vatic-Voice
@@ -53,8 +62,6 @@ pip install torch transformers onnx  # only for `vatic train`
 - Extras combine: `pip install -e ".[livekit,classifier]"`.
 - `vatic train` downloads its base model from Hugging Face on first use. Calibrating or
   using the trained classifiers also needs the `classifier` extra.
-- To use Vatic as a library without the examples:
-  `pip install "git+https://github.com/vineet16/Vatic-Voice.git"`.
 
 ## How it works in one call
 
