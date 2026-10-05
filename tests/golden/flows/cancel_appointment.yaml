@@ -1,0 +1,90 @@
+flow_id: cancel_appointment
+version: 1
+status: candidate
+description: Handles calls that run lookup_patient -> cancel_appointment.
+entry:
+  slots: [name]
+  description: ''
+  learned_guards:
+  - path: slot.name
+    kind: pattern
+    values: [Aa Aa]
+    support: 136
+slots:
+  name: {extractor: person_name, description: 'the caller''s full name, exactly as spoken'}
+steps:
+- id: s1
+  kind: tool
+  tool: lookup_patient
+  side_effect: read_only
+  args:
+    name: {from: slot, slot: name}
+  learned_guards:
+  - path: args.name
+    kind: pattern
+    values: [Aa Aa]
+    support: 136
+  - path: output.found
+    kind: enum
+    values: [true]
+    support: 136
+  - {path: output.patient, kind: not_null, support: 136}
+  - path: output.patient.first_name
+    kind: pattern
+    values: [Aa]
+    support: 136
+  - {path: output.patient.next_appointment, kind: not_null, support: 136}
+  - path: output.patient.next_appointment.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 136
+  - path: output.patient.next_appointment.id
+    kind: pattern
+    values: [A9999]
+    support: 136
+  - path: output.patient.next_appointment.provider
+    kind: enum
+    values: [Dr. Kim, Dr. Lopez, Dr. Patel]
+    support: 136
+  - path: output.patient.next_appointment.time
+    kind: pattern
+    values: ['99:99']
+    support: 136
+  next: s2
+- id: s2
+  kind: confirm
+  say: {template: 'Thanks, {steps.s1.output.patient.first_name}. I see your appointment on {steps.s1.output.patient.next_appointment.date|human_date} at {steps.s1.output.patient.next_appointment.time|human_time} with {steps.s1.output.patient.next_appointment.provider}. Shall I cancel it?', coverage: 1.0}
+  on_yes: s3
+  on_no: fallback
+  inserted: false
+- id: s3
+  kind: tool
+  tool: cancel_appointment
+  side_effect: irreversible
+  args:
+    appointment_id: {from: output, step: s1, path: patient.next_appointment.id}
+  learned_guards:
+  - path: args.appointment_id
+    kind: pattern
+    values: [A9999]
+    support: 136
+  - path: output.cancelled
+    kind: enum
+    values: [true]
+    support: 136
+  next: s4
+- id: s4
+  kind: say
+  say: {template: 'Your appointment on {steps.s1.output.patient.next_appointment.date|human_date} at {steps.s1.output.patient.next_appointment.time|human_time} has been cancelled. Is there anything else I can help you with?', coverage: 1.0}
+  next: end
+provenance:
+  support: 136
+  sessions: [sim-11-00006, sim-11-00007, sim-11-00009, sim-11-00019, sim-11-00021, sim-11-00025, sim-11-00031, sim-11-00046, sim-11-00048, sim-11-00049, sim-11-00054, sim-11-00070, sim-11-00080, sim-11-00085, sim-11-00088, sim-11-00089, sim-11-00100, sim-11-00101, sim-11-00102, sim-11-00116, sim-11-00122, sim-11-00125, sim-11-00151, sim-11-00158, sim-11-00167, sim-11-00169, sim-11-00170, sim-11-00171, sim-11-00185, sim-11-00188, sim-11-00196, sim-11-00198, sim-11-00202, sim-11-00205, sim-11-00212, sim-11-00222, sim-11-00225, sim-11-00237, sim-11-00243, sim-11-00245, sim-11-00246, sim-11-00252, sim-11-00256, sim-11-00261, sim-11-00262, sim-11-00268, sim-11-00271, sim-11-00285, sim-11-00286, sim-11-00288, sim-11-00295, sim-11-00300, sim-11-00302, sim-11-00306, sim-11-00313, sim-11-00314, sim-11-00321, sim-11-00322, sim-11-00323, sim-11-00331, sim-11-00364, sim-11-00366, sim-11-00368, sim-11-00372, sim-11-00381, sim-11-00389, sim-11-00396, sim-11-00401, sim-11-00404, sim-11-00405, sim-11-00407, sim-11-00408, sim-11-00415, sim-11-00419, sim-11-00429, sim-11-00436, sim-11-00449, sim-11-00451, sim-11-00453, sim-11-00454, sim-11-00461, sim-11-00463, sim-11-00466, sim-11-00473, sim-11-00474, sim-11-00482, sim-11-00496, sim-11-00497, sim-11-00502, sim-11-00503, sim-11-00507, sim-11-00508, sim-11-00510, sim-11-00512, sim-11-00521, sim-11-00531, sim-11-00547, sim-11-00548, sim-11-00553, sim-11-00555, sim-11-00556, sim-11-00565, sim-11-00568, sim-11-00575, sim-11-00586, sim-11-00592, sim-11-00605, sim-11-00613, sim-11-00617, sim-11-00622, sim-11-00633, sim-11-00634, sim-11-00637, sim-11-00640, sim-11-00641, sim-11-00642, sim-11-00649, sim-11-00659, sim-11-00663, sim-11-00668, sim-11-00672, sim-11-00699, sim-11-00703, sim-11-00707, sim-11-00709, sim-11-00712, sim-11-00716, sim-11-00721, sim-11-00738, sim-11-00746, sim-11-00766, sim-11-00773, sim-11-00782, sim-11-00785, sim-11-00786, sim-11-00795]
+  tool_signature: [lookup_patient, cancel_appointment]
+  shape:
+  - [lookup_patient]
+  - [cancel_appointment]
+  bindings:
+    s1.args.name: {class: slot, support: 136}
+    s3.args.appointment_id: {class: output, support: 136}
+content_hash: sha256:17981bccb44ea89f81ab1f0d4cf8f6c6d5a388b447a4cfc8d56c46a7dad7fbf0

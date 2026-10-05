@@ -29,7 +29,7 @@ from pipecat.workers.runner import WorkerRunner
 from examples.scheduling.agent_llm import SYSTEM_PROMPT
 from examples.scheduling.backend import BackendPool, ClinicBackend
 from examples.scheduling.pipecat_scripted import ScriptedPipecatLLM
-from examples.scheduling.pipeline_handbuilt import CANNED
+from examples.scheduling.pipeline_handbuilt import canned_call
 from examples.scheduling.tools import build_registry
 from vatic.adapters.pipecat import VaticPipecat
 from vatic.core.runtime import VaticRuntime
@@ -75,7 +75,7 @@ async def demo(flows: Path | None, store: Path) -> None:
             runtime, "pc-demo", ScriptedPipecatLLM(SYSTEM_PROMPT.format(today=today)), today
         )
         await bot.start()
-        for text in CANNED:
+        for text in canned_call(backend):
             result = await bot.say(text)
             print(f"caller> {text}\n agent> {result.text}   [{result.route}]")
         await bot.stop()

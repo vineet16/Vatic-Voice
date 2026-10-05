@@ -1,0 +1,96 @@
+flow_id: cancel_appointment_2
+version: 1
+status: candidate
+description: Handles calls that run lookup_patient -> cancel_appointment.
+entry:
+  slots: [name]
+  description: ''
+  learned_guards:
+  - path: slot.name
+    kind: pattern
+    values: [Aa Aa]
+    support: 24
+slots:
+  name: {extractor: person_name, description: 'the caller''s full name, exactly as spoken'}
+steps:
+- id: s1
+  kind: tool
+  tool: lookup_patient
+  side_effect: read_only
+  args:
+    name: {from: slot, slot: name}
+  learned_guards:
+  - path: args.name
+    kind: pattern
+    values: [Aa Aa]
+    support: 24
+  - path: output.found
+    kind: enum
+    values: [true]
+    support: 24
+  - {path: output.patient, kind: not_null, support: 24}
+  - path: output.patient.first_name
+    kind: pattern
+    values: [Aa]
+    support: 24
+  - {path: output.patient.next_appointment, kind: not_null, support: 24}
+  - path: output.patient.next_appointment.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 24
+  - path: output.patient.next_appointment.id
+    kind: pattern
+    values: [A9999]
+    support: 24
+  - path: output.patient.next_appointment.provider
+    kind: pattern
+    values: [Aa. Aa]
+    support: 24
+  - path: output.patient.next_appointment.time
+    kind: pattern
+    values: ['99:99']
+    support: 24
+  next: s2
+- id: s2
+  kind: ask
+  say: {template: 'Thanks, {steps.s1.output.patient.first_name}. I see your appointment on {steps.s1.output.patient.next_appointment.date|human_date} at {steps.s1.output.patient.next_appointment.time|human_time} with {steps.s1.output.patient.next_appointment.provider}. Shall I cancel it?', coverage: 1.0}
+  membership: {residual_max_tokens: 0}
+  next: s3
+- id: s3
+  kind: confirm
+  say: {template: 'We''re at 120 River Road. I see your appointment on {steps.s1.output.patient.next_appointment.date|human_date} at {steps.s1.output.patient.next_appointment.time|human_time} with {steps.s1.output.patient.next_appointment.provider}. Shall I cancel it?', coverage: 0.9167}
+  on_yes: s4
+  on_no: fallback
+  inserted: false
+- id: s4
+  kind: tool
+  tool: cancel_appointment
+  side_effect: irreversible
+  args:
+    appointment_id: {from: output, step: s1, path: patient.next_appointment.id}
+  learned_guards:
+  - path: args.appointment_id
+    kind: pattern
+    values: [A9999]
+    support: 24
+  - path: output.cancelled
+    kind: enum
+    values: [true]
+    support: 24
+  next: s5
+- id: s5
+  kind: say
+  say: {template: 'Your appointment on {steps.s1.output.patient.next_appointment.date|human_date} at {steps.s1.output.patient.next_appointment.time|human_time} has been cancelled. Is there anything else I can help you with?', coverage: 1.0}
+  next: end
+provenance:
+  support: 24
+  sessions: [sim-11-00013, sim-11-00037, sim-11-00044, sim-11-00141, sim-11-00161, sim-11-00180, sim-11-00191, sim-11-00257, sim-11-00282, sim-11-00352, sim-11-00374, sim-11-00399, sim-11-00402, sim-11-00406, sim-11-00464, sim-11-00499, sim-11-00557, sim-11-00558, sim-11-00559, sim-11-00608, sim-11-00611, sim-11-00638, sim-11-00650, sim-11-00737]
+  tool_signature: [lookup_patient, cancel_appointment]
+  shape:
+  - [lookup_patient]
+  - []
+  - [cancel_appointment]
+  bindings:
+    s1.args.name: {class: slot, support: 24}
+    s4.args.appointment_id: {class: output, support: 24}
+content_hash: sha256:4ba983a3891e9c96e31618bb22986706a7eec3e93f2792fa4d5236de88de2ba5

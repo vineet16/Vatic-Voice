@@ -1,0 +1,150 @@
+flow_id: reschedule_appointment
+version: 1
+status: candidate
+description: Handles calls that run lookup_patient -> check_availability -> reschedule_appointment.
+entry:
+  slots: [name]
+  description: ''
+  learned_guards:
+  - path: slot.name
+    kind: pattern
+    values: [Aa Aa]
+    support: 85
+slots:
+  name: {extractor: person_name, description: 'the caller''s full name, exactly as spoken'}
+  date: {extractor: date_phrase, description: a date phrase exactly as the caller said it (e.g. 'next Tuesday')}
+  time: {extractor: time_phrase, description: a time phrase exactly as the caller said it (e.g. '2 pm')}
+steps:
+- id: s1
+  kind: tool
+  tool: lookup_patient
+  side_effect: read_only
+  args:
+    name: {from: slot, slot: name}
+  learned_guards:
+  - path: args.name
+    kind: pattern
+    values: [Aa Aa]
+    support: 85
+  - path: output.found
+    kind: enum
+    values: [true]
+    support: 85
+  - {path: output.patient, kind: not_null, support: 85}
+  - path: output.patient.first_name
+    kind: pattern
+    values: [Aa]
+    support: 85
+  - {path: output.patient.next_appointment, kind: not_null, support: 85}
+  - path: output.patient.next_appointment.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 85
+  - path: output.patient.next_appointment.id
+    kind: pattern
+    values: [A9999]
+    support: 85
+  - path: output.patient.next_appointment.time
+    kind: pattern
+    values: ['99:99']
+    support: 85
+  next: s2
+- id: s2
+  kind: ask
+  expects: [date]
+  say: {template: 'Thanks, {steps.s1.output.patient.first_name}. Your current appointment is on {steps.s1.output.patient.next_appointment.date|human_date} at {steps.s1.output.patient.next_appointment.time|human_time}. What day would you like to move it to?', coverage: 1.0}
+  membership: {residual_max_tokens: 1}
+  next: s3
+- id: s3
+  kind: tool
+  tool: check_availability
+  side_effect: read_only
+  args:
+    date:
+      from: transform
+      fn: normalize_date
+      input: {from: slot, slot: date}
+  learned_guards:
+  - path: args.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 85
+  - path: output.available
+    kind: enum
+    values: [true]
+    support: 85
+  - path: output.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 85
+  - {path: output.times, kind: not_null, support: 85}
+  - {path: output.times, kind: length, min: 1.0, max: 4.0, support: 85}
+  next: s4
+- id: s4
+  kind: ask
+  expects: [time]
+  say: {template: 'On {steps.s3.output.date|human_date} I have {steps.s3.output.times|human_time_list}. Which time works best for you?', coverage: 1.0}
+  learned_guards:
+  - {path: slot.time, kind: member_of, container: steps.s3.output.times, fn: normalize_time, support: 85}
+  membership: {residual_max_tokens: 0}
+  next: s5
+- id: s5
+  kind: confirm
+  say: {template: 'Just to confirm: move your appointment to {steps.s3.output.date|human_date} at {slot.time|normalize_time|human_time}. Shall I go ahead?', coverage: 1.0}
+  on_yes: s6
+  on_no: fallback
+  inserted: false
+- id: s6
+  kind: tool
+  tool: reschedule_appointment
+  side_effect: reversible
+  args:
+    appointment_id: {from: output, step: s1, path: patient.next_appointment.id}
+    date: {from: output, step: s3, path: date}
+    time:
+      from: transform
+      fn: normalize_time
+      input: {from: slot, slot: time}
+  learned_guards:
+  - path: args.appointment_id
+    kind: pattern
+    values: [A9999]
+    support: 85
+  - path: args.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 85
+  - path: args.time
+    kind: pattern
+    values: ['99:99']
+    support: 85
+  - path: output.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 85
+  - path: output.time
+    kind: pattern
+    values: ['99:99']
+    support: 85
+  - {path: args.time, kind: member_of, container: steps.s3.output.times, support: 85}
+  next: s7
+- id: s7
+  kind: say
+  say: {template: 'Done. Your appointment is now on {steps.s6.output.date|human_date} at {steps.s6.output.time|human_time}. Is there anything else I can help you with?', coverage: 1.0}
+  next: end
+provenance:
+  support: 85
+  sessions: [sim-11-00017, sim-11-00028, sim-11-00030, sim-11-00043, sim-11-00051, sim-11-00055, sim-11-00057, sim-11-00058, sim-11-00073, sim-11-00097, sim-11-00113, sim-11-00123, sim-11-00126, sim-11-00127, sim-11-00128, sim-11-00137, sim-11-00142, sim-11-00144, sim-11-00146, sim-11-00154, sim-11-00155, sim-11-00178, sim-11-00186, sim-11-00190, sim-11-00200, sim-11-00209, sim-11-00217, sim-11-00218, sim-11-00224, sim-11-00242, sim-11-00244, sim-11-00259, sim-11-00263, sim-11-00273, sim-11-00284, sim-11-00290, sim-11-00309, sim-11-00311, sim-11-00316, sim-11-00332, sim-11-00341, sim-11-00343, sim-11-00363, sim-11-00394, sim-11-00398, sim-11-00414, sim-11-00423, sim-11-00428, sim-11-00437, sim-11-00455, sim-11-00459, sim-11-00462, sim-11-00468, sim-11-00471, sim-11-00478, sim-11-00485, sim-11-00487, sim-11-00513, sim-11-00526, sim-11-00534, sim-11-00535, sim-11-00544, sim-11-00546, sim-11-00574, sim-11-00579, sim-11-00583, sim-11-00584, sim-11-00589, sim-11-00594, sim-11-00602, sim-11-00625, sim-11-00630, sim-11-00654, sim-11-00661, sim-11-00665, sim-11-00674, sim-11-00682, sim-11-00684, sim-11-00687, sim-11-00696, sim-11-00715, sim-11-00720, sim-11-00734, sim-11-00752, sim-11-00796]
+  tool_signature: [lookup_patient, check_availability, reschedule_appointment]
+  shape:
+  - [lookup_patient]
+  - [check_availability]
+  - []
+  - [reschedule_appointment]
+  bindings:
+    s1.args.name: {class: slot, support: 85}
+    s3.args.date: {class: transform, support: 85}
+    s6.args.appointment_id: {class: output, support: 85}
+    s6.args.date: {class: output, support: 85}
+    s6.args.time: {class: transform, support: 85}
+content_hash: sha256:653fc632a4e5cfc78c38cf3468610ffa617bc382ba756ee47c33f3fd5677744d

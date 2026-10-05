@@ -18,18 +18,29 @@ from examples.scheduling.agent_llm import ClinicAgent
 from examples.scheduling.backend import BackendPool, ClinicBackend
 from examples.scheduling.scripted_llm import ScriptedClinicLLM
 from examples.scheduling.tools import build_registry
+from examples.simulator.caller import date_phrases, time_phrases
 from vatic.adapters.pipeline import PipelineAdapter
 from vatic.core.runtime import VaticRuntime
 from vatic.llm.client import default_client
 from vatic.trace.store import TraceStore
 
-CANNED = [
-    "Hi! I'd like to book an appointment. My name is Jane Doe.",
-    "Next Tuesday would be great.",
-    "Let's do 2 pm.",
-    "Yes, please.",
-    "No, that's all. Thanks, bye!",
-]
+
+def canned_call(backend: ClinicBackend) -> list[str]:
+    """A booking call for a real patient, day and time of this clinic's (seeded) data."""
+    _, first, last = next(
+        p
+        for p in backend.patients
+        if not [a for a in backend.appointments_for(p[0]) if a["status"] == "booked"]
+    )
+    day = next(d for d in backend.clinic_days(10) if backend.check_availability(d)["times"])
+    hhmm = backend.check_availability(day)["times"][0]
+    return [
+        f"Hi! I'd like to book an appointment. My name is {first} {last}.",
+        f"{date_phrases(day, backend.today)[-1]} would be great.",
+        f"Let's do {time_phrases(hhmm)[0]}.",
+        "Yes, please.",
+        "No, that's all. Thanks, bye!",
+    ]
 
 
 async def run(flows: Path | None, store: Path, script: bool, seed: int) -> None:
@@ -42,7 +53,7 @@ async def run(flows: Path | None, store: Path, script: bool, seed: int) -> None:
         backend = ClinicBackend(seed=seed)
         pool.add(sid, backend)
         runtime.start_session(sid, {"today": backend.today.isoformat()})
-        lines = iter(CANNED) if script else (line.strip() for line in sys.stdin)
+        lines = iter(canned_call(backend)) if script else (line.strip() for line in sys.stdin)
         print(
             f"[clinic] today is {backend.today}. Patients include: "
             + ", ".join(f"{f} {la}" for _, f, la in backend.patients[:5])

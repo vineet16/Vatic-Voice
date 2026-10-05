@@ -1,0 +1,134 @@
+flow_id: book_appointment_3
+version: 1
+status: candidate
+description: Handles calls that run lookup_patient -> check_availability -> book_appointment.
+entry:
+  slots: [name, date]
+  description: ''
+  learned_guards:
+  - path: slot.name
+    kind: pattern
+    values: [Aa Aa]
+    support: 56
+slots:
+  name: {extractor: person_name, description: 'the caller''s full name, exactly as spoken'}
+  date: {extractor: date_phrase, description: a date phrase exactly as the caller said it (e.g. 'next Tuesday')}
+  time: {extractor: time_phrase, description: a time phrase exactly as the caller said it (e.g. '2 pm')}
+steps:
+- id: s1
+  kind: tool
+  tool: lookup_patient
+  side_effect: read_only
+  args:
+    name: {from: slot, slot: name}
+  learned_guards:
+  - path: args.name
+    kind: pattern
+    values: [Aa Aa]
+    support: 56
+  - path: output.found
+    kind: enum
+    values: [true]
+    support: 56
+  - {path: output.patient, kind: not_null, support: 56}
+  - path: output.patient.first_name
+    kind: pattern
+    values: [Aa]
+    support: 56
+  - path: output.patient.id
+    kind: pattern
+    values: [A9999]
+    support: 56
+  next: s2
+- id: s2
+  kind: tool
+  tool: check_availability
+  side_effect: read_only
+  args:
+    date:
+      from: transform
+      fn: normalize_date
+      input: {from: slot, slot: date}
+  learned_guards:
+  - path: args.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 56
+  - path: output.available
+    kind: enum
+    values: [true]
+    support: 56
+  - path: output.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 56
+  - {path: output.times, kind: not_null, support: 56}
+  - {path: output.times, kind: length, min: 1.0, max: 4.0, support: 56}
+  next: s3
+- id: s3
+  kind: ask
+  expects: [time]
+  say: {template: 'Thanks, {steps.s1.output.patient.first_name}. On {steps.s2.output.date|human_date} I have {steps.s2.output.times|human_time_list}. Which time works best for you?', coverage: 1.0}
+  learned_guards:
+  - {path: slot.time, kind: member_of, container: steps.s2.output.times, fn: normalize_time, support: 56}
+  membership: {residual_max_tokens: 0}
+  next: s4
+- id: s4
+  kind: confirm
+  say: {template: 'Just to confirm: {steps.s2.output.date|human_date} at {slot.time|normalize_time|human_time}. Shall I book it?', coverage: 1.0}
+  on_yes: s5
+  on_no: fallback
+  inserted: false
+- id: s5
+  kind: tool
+  tool: book_appointment
+  side_effect: irreversible
+  args:
+    date: {from: output, step: s2, path: date}
+    patient_id: {from: output, step: s1, path: patient.id}
+    time:
+      from: transform
+      fn: normalize_time
+      input: {from: slot, slot: time}
+  learned_guards:
+  - path: args.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 56
+  - path: args.patient_id
+    kind: pattern
+    values: [A9999]
+    support: 56
+  - path: args.time
+    kind: pattern
+    values: ['99:99']
+    support: 56
+  - path: output.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 56
+  - path: output.time
+    kind: pattern
+    values: ['99:99']
+    support: 56
+  - {path: args.time, kind: member_of, container: steps.s2.output.times, support: 56}
+  next: s6
+- id: s6
+  kind: say
+  say: {template: 'You''re all set, {steps.s1.output.patient.first_name}. Your appointment is on {steps.s5.output.date|human_date} at {steps.s5.output.time|human_time}. Is there anything else I can help you with?', coverage: 1.0}
+  next: end
+provenance:
+  support: 56
+  sessions: [sim-11-00059, sim-11-00065, sim-11-00092, sim-11-00119, sim-11-00159, sim-11-00160, sim-11-00165, sim-11-00177, sim-11-00211, sim-11-00216, sim-11-00220, sim-11-00239, sim-11-00254, sim-11-00266, sim-11-00293, sim-11-00303, sim-11-00319, sim-11-00328, sim-11-00334, sim-11-00335, sim-11-00347, sim-11-00349, sim-11-00351, sim-11-00354, sim-11-00357, sim-11-00369, sim-11-00371, sim-11-00379, sim-11-00395, sim-11-00412, sim-11-00416, sim-11-00435, sim-11-00452, sim-11-00456, sim-11-00480, sim-11-00530, sim-11-00539, sim-11-00542, sim-11-00554, sim-11-00576, sim-11-00603, sim-11-00618, sim-11-00653, sim-11-00664, sim-11-00666, sim-11-00680, sim-11-00693, sim-11-00695, sim-11-00700, sim-11-00702, sim-11-00705, sim-11-00713, sim-11-00735, sim-11-00744, sim-11-00750, sim-11-00775]
+  tool_signature: [lookup_patient, check_availability, book_appointment]
+  shape:
+  - [lookup_patient, check_availability]
+  - []
+  - [book_appointment]
+  bindings:
+    s1.args.name: {class: slot, support: 56}
+    s2.args.date: {class: transform, support: 56}
+    s5.args.date: {class: output, support: 56}
+    s5.args.patient_id: {class: output, support: 56}
+    s5.args.time: {class: transform, support: 56}
+content_hash: sha256:a1d179630e30a760d472efcc94b1db5c394617f522a8d4c53bef3f998feadb8a

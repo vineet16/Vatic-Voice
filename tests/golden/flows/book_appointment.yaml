@@ -1,0 +1,234 @@
+flow_id: book_appointment
+version: 1
+status: candidate
+description: Handles calls that run lookup_patient -> check_availability -> book_appointment.
+entry:
+  slots: [name]
+  description: ''
+  learned_guards:
+  - path: slot.name
+    kind: pattern
+    values: [Aa Aa]
+    support: 181
+slots:
+  name: {extractor: person_name, description: 'the caller''s full name, exactly as spoken'}
+  date: {extractor: date_phrase, description: a date phrase exactly as the caller said it (e.g. 'next Tuesday')}
+  time: {extractor: time_phrase, description: a time phrase exactly as the caller said it (e.g. '2 pm')}
+  date_2: {extractor: date_phrase, description: a date phrase exactly as the caller said it (e.g. 'next Tuesday')}
+steps:
+- id: s1
+  kind: tool
+  tool: lookup_patient
+  side_effect: read_only
+  args:
+    name: {from: slot, slot: name}
+  learned_guards:
+  - path: args.name
+    kind: pattern
+    values: [Aa Aa]
+    support: 249
+  - path: output.found
+    kind: enum
+    values: [true]
+    support: 249
+  - {path: output.patient, kind: not_null, support: 249}
+  - path: output.patient.first_name
+    kind: pattern
+    values: [Aa]
+    support: 249
+  - path: output.patient.id
+    kind: pattern
+    values: [A9999]
+    support: 249
+  next: s2
+- id: s2
+  kind: ask
+  expects: [date]
+  say: {template: 'Thanks, {steps.s1.output.patient.first_name}. What day would you like to come in?', coverage: 1.0}
+  membership: {residual_max_tokens: 1}
+  next: s3
+- id: s3
+  kind: tool
+  tool: check_availability
+  side_effect: read_only
+  args:
+    date:
+      from: transform
+      fn: normalize_date
+      input: {from: slot, slot: date}
+  learned_guards:
+  - path: args.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 249
+  - path: output.available
+    kind: enum
+    values: [false, true]
+    support: 249
+  - path: output.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 249
+  next: s3x
+- id: s3x
+  kind: branch
+  cases:
+  - {when: steps.s3.output.available == True, next: s4}
+  - {when: steps.s3.output.available == False, next: s4b}
+  default: fallback
+- id: s4
+  kind: ask
+  expects: [time]
+  say: {template: 'On {steps.s3.output.date|human_date} I have {steps.s3.output.times|human_time_list}. Which time works best for you?', coverage: 0.9834}
+  learned_guards:
+  - {path: slot.time, kind: member_of, container: steps.s3.output.times, fn: normalize_time, support: 181}
+  membership: {residual_max_tokens: 0}
+  next: s5
+- id: s5
+  kind: confirm
+  say: {template: 'Just to confirm: {steps.s3.output.date|human_date} at {slot.time|normalize_time|human_time}. Shall I book it?', coverage: 0.9724}
+  on_yes: s6
+  on_no: fallback
+  inserted: false
+- id: s6
+  kind: tool
+  tool: book_appointment
+  side_effect: irreversible
+  args:
+    date: {from: output, step: s3, path: date}
+    patient_id: {from: output, step: s1, path: patient.id}
+    time:
+      from: transform
+      fn: normalize_time
+      input: {from: slot, slot: time}
+  learned_guards:
+  - path: args.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 181
+  - path: args.patient_id
+    kind: pattern
+    values: [A9999]
+    support: 181
+  - path: args.time
+    kind: pattern
+    values: ['99:99']
+    support: 181
+  - path: output.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 181
+  - path: output.time
+    kind: pattern
+    values: ['99:99']
+    support: 181
+  - {path: args.time, kind: member_of, container: steps.s3.output.times, support: 181}
+  next: s7
+- id: s7
+  kind: say
+  say: {template: 'You''re all set, {steps.s1.output.patient.first_name}. Your appointment is on {steps.s6.output.date|human_date} at {steps.s6.output.time|human_time}. Is there anything else I can help you with?', coverage: 1.0}
+  next: end
+- id: s4b
+  kind: ask
+  expects: [date_2]
+  say: {template: 'Sorry, we have no openings on {steps.s3.output.date|human_date}. Is there another day that works for you?', coverage: 1.0}
+  membership: {residual_max_tokens: 0}
+  next: s5b
+- id: s5b
+  kind: tool
+  tool: check_availability
+  side_effect: read_only
+  args:
+    date:
+      from: transform
+      fn: normalize_date
+      input: {from: slot, slot: date_2}
+  learned_guards:
+  - path: args.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 68
+  - path: output.available
+    kind: enum
+    values: [true]
+    support: 68
+  - path: output.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 68
+  - {path: output.times, kind: not_null, support: 68}
+  - {path: output.times, kind: length, min: 1.0, max: 4.0, support: 68}
+  next: s6b
+- id: s6b
+  kind: ask
+  expects: [time]
+  say: {template: 'On {steps.s5b.output.date|human_date} I have {steps.s5b.output.times|human_time_list}. Which time works best for you?', coverage: 1.0}
+  learned_guards:
+  - {path: slot.time, kind: member_of, container: steps.s5b.output.times, fn: normalize_time, support: 68}
+  membership: {residual_max_tokens: 0}
+  next: s7b
+- id: s7b
+  kind: confirm
+  say: {template: 'Just to confirm: {steps.s5b.output.date|human_date} at {slot.time|normalize_time|human_time}. Shall I book it?', coverage: 0.9853}
+  on_yes: s8b
+  on_no: fallback
+  inserted: false
+- id: s8b
+  kind: tool
+  tool: book_appointment
+  side_effect: irreversible
+  args:
+    date: {from: output, step: s5b, path: date}
+    patient_id: {from: output, step: s1, path: patient.id}
+    time:
+      from: transform
+      fn: normalize_time
+      input: {from: slot, slot: time}
+  learned_guards:
+  - path: args.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 68
+  - path: args.patient_id
+    kind: pattern
+    values: [A9999]
+    support: 68
+  - path: args.time
+    kind: pattern
+    values: ['99:99']
+    support: 68
+  - path: output.date
+    kind: pattern
+    values: ['9999-99-99']
+    support: 68
+  - path: output.time
+    kind: pattern
+    values: ['99:99']
+    support: 68
+  - {path: args.time, kind: member_of, container: steps.s5b.output.times, support: 68}
+  next: s9b
+- id: s9b
+  kind: say
+  say: {template: 'You''re all set, {steps.s1.output.patient.first_name}. Your appointment is on {steps.s8b.output.date|human_date} at {steps.s8b.output.time|human_time}. Is there anything else I can help you with?', coverage: 1.0}
+  next: end
+provenance:
+  support: 249
+  sessions: [sim-11-00000, sim-11-00003, sim-11-00004, sim-11-00005, sim-11-00014, sim-11-00015, sim-11-00018, sim-11-00020, sim-11-00032, sim-11-00036, sim-11-00040, sim-11-00042, sim-11-00045, sim-11-00047, sim-11-00050, sim-11-00052, sim-11-00053, sim-11-00056, sim-11-00061, sim-11-00064, sim-11-00066, sim-11-00067, sim-11-00071, sim-11-00072, sim-11-00074, sim-11-00075, sim-11-00076, sim-11-00077, sim-11-00078, sim-11-00081, sim-11-00082, sim-11-00084, sim-11-00090, sim-11-00093, sim-11-00094, sim-11-00096, sim-11-00098, sim-11-00106, sim-11-00108, sim-11-00109, sim-11-00110, sim-11-00118, sim-11-00120, sim-11-00124, sim-11-00129, sim-11-00130, sim-11-00131, sim-11-00138, sim-11-00143, sim-11-00147, sim-11-00149, sim-11-00152, sim-11-00153, sim-11-00157, sim-11-00162, sim-11-00164, sim-11-00172, sim-11-00173, sim-11-00174, sim-11-00175, sim-11-00179, sim-11-00181, sim-11-00184, sim-11-00187, sim-11-00192, sim-11-00194, sim-11-00197, sim-11-00201, sim-11-00204, sim-11-00207, sim-11-00210, sim-11-00213, sim-11-00214, sim-11-00219, sim-11-00226, sim-11-00230, sim-11-00232, sim-11-00234, sim-11-00235, sim-11-00236, sim-11-00241, sim-11-00248, sim-11-00249, sim-11-00250, sim-11-00253, sim-11-00255, sim-11-00258, sim-11-00260, sim-11-00264, sim-11-00265, sim-11-00269, sim-11-00275, sim-11-00277, sim-11-00279, sim-11-00280, sim-11-00287, sim-11-00289, sim-11-00291, sim-11-00292, sim-11-00294, sim-11-00296, sim-11-00301, sim-11-00304, sim-11-00305, sim-11-00307, sim-11-00324, sim-11-00325, sim-11-00326, sim-11-00333, sim-11-00336, sim-11-00338, sim-11-00339, sim-11-00344, sim-11-00345, sim-11-00355, sim-11-00359, sim-11-00365, sim-11-00367, sim-11-00370, sim-11-00373, sim-11-00378, sim-11-00382, sim-11-00384, sim-11-00386, sim-11-00387, sim-11-00397, sim-11-00403, sim-11-00411, sim-11-00413, sim-11-00417, sim-11-00418, sim-11-00420, sim-11-00421, sim-11-00422, sim-11-00426, sim-11-00432, sim-11-00438, sim-11-00441, sim-11-00443, sim-11-00445, sim-11-00446, sim-11-00448, sim-11-00457, sim-11-00460, sim-11-00465, sim-11-00469, sim-11-00470, sim-11-00476, sim-11-00481, sim-11-00490, sim-11-00492, sim-11-00494, sim-11-00509, sim-11-00514, sim-11-00515, sim-11-00516, sim-11-00519, sim-11-00520, sim-11-00523, sim-11-00524, sim-11-00525, sim-11-00528, sim-11-00532, sim-11-00538, sim-11-00540, sim-11-00543, sim-11-00549, sim-11-00550, sim-11-00552, sim-11-00561, sim-11-00566, sim-11-00567, sim-11-00569, sim-11-00571, sim-11-00577, sim-11-00578, sim-11-00590, sim-11-00591, sim-11-00596, sim-11-00597, sim-11-00599, sim-11-00601, sim-11-00604, sim-11-00606, sim-11-00610, sim-11-00612, sim-11-00614, sim-11-00615, sim-11-00616, sim-11-00619, sim-11-00621, sim-11-00626, sim-11-00628, sim-11-00635, sim-11-00636, sim-11-00639, sim-11-00644, sim-11-00645, sim-11-00646, sim-11-00648, sim-11-00651, sim-11-00652, sim-11-00657, sim-11-00669, sim-11-00670, sim-11-00671, sim-11-00673, sim-11-00675, sim-11-00681, sim-11-00685, sim-11-00688, sim-11-00689, sim-11-00692, sim-11-00694, sim-11-00697, sim-11-00701, sim-11-00708, sim-11-00710, sim-11-00711, sim-11-00714, sim-11-00718, sim-11-00719, sim-11-00723, sim-11-00731, sim-11-00732, sim-11-00739, sim-11-00740, sim-11-00748, sim-11-00749, sim-11-00754, sim-11-00757, sim-11-00758, sim-11-00759, sim-11-00765, sim-11-00767, sim-11-00768, sim-11-00770, sim-11-00772, sim-11-00776, sim-11-00777, sim-11-00780, sim-11-00781, sim-11-00783, sim-11-00788, sim-11-00789, sim-11-00792, sim-11-00793, sim-11-00797, sim-11-00798]
+  tool_signature: [lookup_patient, check_availability, book_appointment]
+  shape:
+  - [lookup_patient]
+  - [check_availability]
+  - []
+  - [book_appointment]
+  bindings:
+    s1.args.name: {class: slot, support: 68}
+    s3.args.date: {class: transform, support: 68}
+    s5b.args.date: {class: transform, support: 68}
+    s6.args.date: {class: output, support: 181}
+    s6.args.patient_id: {class: output, support: 181}
+    s6.args.time: {class: transform, support: 181}
+    s8b.args.date: {class: output, support: 68}
+    s8b.args.patient_id: {class: output, support: 68}
+    s8b.args.time: {class: transform, support: 68}
+  notes: ['dropped (inapplicable): sim-11-00475 (s3.date)', 'dropped (inapplicable): sim-11-00655 (s3.date)', 'branch s3x: merged book_appointment_2 when steps.s3.output.available == False']
+content_hash: sha256:da5285f9e1b31e212321395fba2e44c4ffe8ca1e010ee3188b0bda1558b592a3

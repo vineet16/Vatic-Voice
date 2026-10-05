@@ -92,6 +92,18 @@ async with VaticRuntime(registry, flows_dir="flows", store=TraceStore(".vatic/tr
 ```
 
 Try it offline with the reference clinic agent: `python -m examples.scheduling.pipeline_handbuilt`.
+Every turn goes to the (scripted) LLM until a flow is learned and promoted. To see compiled turns
+in two minutes:
+
+```bash
+python -m examples.simulator.run --sessions 300 --store .vatic/traces --perfect-llm  # record calls
+vatic compile --store .vatic/traces --out flows                                       # learn flows
+vatic promote book_appointment --store .vatic/traces --flows flows   # candidate -> shadow (manual)
+vatic promote book_appointment --store .vatic/traces --flows flows   # shadow -> active (manual)
+python -m examples.scheduling.pipeline_handbuilt --flows flows       # turns 2-4: [compiled ...]
+```
+
+(In production, flows earn `active` from shadow evidence with `vatic promote --auto` instead.)
 `examples/scheduling/agent_llm.py` shows a complete tool-calling agent written this way.
 
 ## Quickstart 2 — LiveKit Agents (10 min)

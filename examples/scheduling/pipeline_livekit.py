@@ -21,7 +21,7 @@ from livekit.agents import AgentServer, AgentSession, JobContext
 from examples.scheduling.agent_llm import SYSTEM_PROMPT
 from examples.scheduling.backend import BackendPool, ClinicBackend
 from examples.scheduling.livekit_scripted import ScriptedLiveKitLLM
-from examples.scheduling.pipeline_handbuilt import CANNED
+from examples.scheduling.pipeline_handbuilt import canned_call
 from examples.scheduling.tools import build_registry
 from vatic.adapters.livekit import VaticAgent
 from vatic.core.runtime import VaticRuntime
@@ -69,7 +69,7 @@ async def demo(flows: Path | None, store: Path) -> None:
         )
         async with AgentSession(llm=ScriptedLiveKitLLM()) as session:
             await session.start(agent)
-            for text in CANNED:
+            for text in canned_call(backend):
                 result = await session.run(user_input=text)
                 print(f"caller> {text}")
                 for event in result.events:
