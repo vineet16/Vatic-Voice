@@ -195,3 +195,7 @@ ruff check . && mypy        # mypy --strict on core, compiler, ir, trace
 ```
 
 Design choices beyond the spec are recorded in [DECISIONS.md](DECISIONS.md).
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).

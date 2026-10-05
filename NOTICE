@@ -1,0 +1,8 @@
+Vatic
+Copyright 2026 The Vatic contributors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Training per-step membership classifiers (`vatic train`) downloads and fine-tunes
+the third-party model cross-encoder/ms-marco-TinyBERT-L2-v2, which is distributed
+separately under its own license and is not included in this repository.
